@@ -1,30 +1,13 @@
 import express from "express";
 import { db } from "../firebase.js"; // Assuming your Firebase module file is named firebase.mjs
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
-    try {
-        const querySnapshot = await getDocs(collection(db, "Departments"));
-        const departments = [];
-        querySnapshot.forEach((document) => {
-            departments.push({
-                id: document.id,
-                data: document.data()
-            });
-        });
-        res.json(departments);
-    } catch (error) {
-        console.error("Error fetching departments:", error);
-        res.status(500).json({ error: "Failed to fetch departments" });
-    }
-});
-
-router.get('/:id/classes', async (req, res) => {
+router.get('/classes', async (req, res) => {
     try {
         // Fetch the department document
-
+        console.log(req.params.id)
         const docRef = doc(db, "Departments", req.params.id);
         const docSnap = await getDoc(docRef);
 
@@ -32,11 +15,10 @@ router.get('/:id/classes', async (req, res) => {
         if (docSnap.exists()) {
             const departmentData = docSnap.data();
 
-
             // Check if the department data contains classID field
-            if (departmentData.classId && Array.isArray(departmentData.classId)) {
+            if (departmentData.classID && Array.isArray(departmentData.classID)) {
                 // Fetch class documents using classID list
-                const classPromises = departmentData.classId.map(async (classId) => {
+                const classPromises = departmentData.classID.map(async (classId) => {
                     const classDocRef = doc(db, "Classes", classId);
                     const classDocSnap = await getDoc(classDocRef);
                     return classDocSnap.exists() ? classDocSnap.data() : null;
@@ -61,5 +43,6 @@ router.get('/:id/classes', async (req, res) => {
         return res.status(500).json({ error: "Failed to fetch classes" });
     }
 });
+
 
 export { router };
