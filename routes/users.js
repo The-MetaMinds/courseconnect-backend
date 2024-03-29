@@ -3,7 +3,7 @@ const router = express.Router();
 
 import Joi from 'joi';
 import { db } from "../firebase.js"; // Assuming your Firebase module file is named firebase.mjs
-import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc } from "firebase/firestore"
+import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDocs } from "firebase/firestore"
 import 'firebase/firestore';
 
 router.get('/:id', async (req, res) => {
@@ -43,16 +43,24 @@ router.get('/:id', async (req, res) => {
 //this is the api to create users.
 router.post('/', async (req, res) => {
     const {error} = validateUser(req.body)
-    
     if(error) return res.status(400).send(error.details[0].message);
 
     const newUser = {
         firstname : req.body.firstname,
         lastname: req.body.lastname,
-        email : req.body.email 
+        email : req.body.email,
+        password: req.body.email 
     }
 
     try {
+
+        //check if user exists already
+        const userExist = await checkEmailExists(newUser.email)
+
+        if (userExist){
+            return res.status(400).send("User Already Exists")
+        }
+
         const userRef = await addUser(newUser);
         const userDoc = await getDoc(userRef);
         const user = { id: userDoc.id, ...userDoc.data() };
@@ -85,7 +93,8 @@ function validateUser(user){
         firstname : Joi.string().required(),
         lastname: Joi.string().required(),
         email: Joi.string()
-        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }).required()
+        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }).required(),
+        password : Joi.string().required()
     })
 
     return schema.validate(user);
@@ -95,9 +104,13 @@ async function addUser(newUser) {
     //const newUserAdded = await db.collection("users").add(newUser);
     const newUserAdded = await addDoc(collection(db, "users"), newUser);
     //const newUserAdded = await db.collection("users").add(newUser);
-    console.log("the new user:", newUserAdded);
-    console.log("it's id:", newUserAdded.id);
     return newUserAdded;
+}
+
+async function checkEmailExists(email) {
+    const q = query(collection(db, "users"), where("email", "==", email));
+    const querySnapshot = getDocs(q)
+    return !querySnapshot.empty;
 }
 
 export {router}
