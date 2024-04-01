@@ -5,6 +5,7 @@ import Joi from 'joi';
 import { db } from "../firebase.js"; // Assuming your Firebase module file is named firebase.mjs
 import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDocs } from "firebase/firestore"
 import 'firebase/firestore';
+import bcrypt from "bcrypt";
 
 router.get('/:id', async (req, res) => {
     
@@ -17,49 +18,29 @@ router.get('/:id', async (req, res) => {
         // docSnap.data() will be undefined in this case
         return res.status(404).send("Invalid ID")
     }
-    /*
-    querySnapshot.forEach((doc) => {
-    // doc.data() is never undefined for query doc snapshots
-    console.log(doc.id, " => ", doc.data());
-    });
-
-    const docRef = doc(db, "cities", "SF");
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-    console.log("Document data:", docSnap.data());
-    } else {
-    // docSnap.data() will be undefined in this case
-    console.log("No such document!");
-    }
-    */
-
-    //if(!querySnapshot) return res.status(404).send("Invalid ID")
-    //return res.send(querySnapshot[0]);
 })
 
 
 
 //this is the api to create users.
 router.post('/', async (req, res) => {
-    const {error} = validateUser(req.body)
+
+    const { firstname, lastname, email, password } = req.body;
+
+    const {error} = validateUser({ firstname, lastname, email, password })
     if(error) return res.status(400).send(error.details[0].message);
-
-    const newUser = {
-        firstname : req.body.firstname,
-        lastname: req.body.lastname,
-        email : req.body.email,
-        password: req.body.email 
-    }
-
     try {
 
         //check if user exists already
-        const userExist = await checkEmailExists(newUser.email)
+        const userExist = await checkEmailExists(email)
 
         if (userExist){
             return res.status(400).send("User Already Exists")
         }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = { firstname, lastname, email, password }
 
         const userRef = await addUser(newUser);
         const userDoc = await getDoc(userRef);
@@ -109,7 +90,8 @@ async function addUser(newUser) {
 
 async function checkEmailExists(email) {
     const q = query(collection(db, "users"), where("email", "==", email));
-    const querySnapshot = getDocs(q)
+    const querySnapshot = await getDocs(q)
+    console.log(querySnapshot)
     return !querySnapshot.empty;
 }
 
