@@ -111,7 +111,7 @@ function validateUser(user){
         firstname : Joi.string().required(),
         lastname: Joi.string().required(),
         email: Joi.string()
-        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }).required(),
+        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'edu'] } }).required(),
         password : Joi.string().required()
     })
 
