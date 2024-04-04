@@ -39,7 +39,13 @@ router.get('/:id/classes', async (req, res) => {
                 const classPromises = departmentData.classId.map(async (classId) => {
                     const classDocRef = doc(db, "Classes", classId);
                     const classDocSnap = await getDoc(classDocRef);
-                    return classDocSnap.exists() ? classDocSnap.data() : null;
+                    if (classDocSnap.exists()) {
+                        const classData = classDocSnap.data();
+                        // Return an object containing both name and id
+                        return { id: classId, name: classData.name };
+                    } else {
+                        return null;
+                    }
                 });
 
                 // Wait for all class document fetches to complete
