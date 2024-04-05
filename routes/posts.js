@@ -4,7 +4,7 @@ const router = express.Router();
 import { db } from "../firebase.js"; // Assuming your Firebase module file is named firebase.mjs
 import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDocs, limit } from "firebase/firestore"
 import 'firebase/firestore';
-
+/*
 router.get('/:id', async (req, res) => {
 
     const courseId = req.params.id 
@@ -18,6 +18,32 @@ router.get('/:id', async (req, res) => {
         return res.status(404).send("No Posts yet")
     }
 })
+*/
+
+router.get('/:id', async (req, res) => {
+    try {
+        const courseId = req.params.id;
+
+        const q = query(collection(db, "Posts"), where("courseId", "==", courseId));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            // Extract data from each document and form an array of post objects
+            const posts = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            return res.json(posts);
+        } else {
+            return res.status(404).json({ error: "No Posts yet" });
+        }
+    } catch (error) {
+        console.error("Error fetching posts:", error);
+        return res.status(500).json({ error: "Failed to fetch posts" });
+    }
+});
+
 
 
 
