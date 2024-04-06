@@ -4,6 +4,7 @@ const router = express.Router();
 import { db } from "../firebase.js"; // Assuming your Firebase module file is named firebase.mjs
 import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDocs, limit } from "firebase/firestore"
 import 'firebase/firestore';
+import {auth} from '../middleware/auth.js'
 /*
 router.get('/:id', async (req, res) => {
 
@@ -20,7 +21,7 @@ router.get('/:id', async (req, res) => {
 })
 */
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
     try {
         const courseId = req.params.id;
 
@@ -48,7 +49,7 @@ router.get('/:id', async (req, res) => {
 
 
 //this is the api to add posts
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
 
     const { title, content, username, timestamp, course } = req.body;
 

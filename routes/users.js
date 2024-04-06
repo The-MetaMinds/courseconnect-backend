@@ -7,6 +7,7 @@ import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDo
 import 'firebase/firestore';
 import bcrypt from "bcrypt";
 import generateAuthToken from "../auth.js";
+import _ from "lodash"
 
 router.get('/:id', async (req, res) => {
     
@@ -14,7 +15,9 @@ router.get('/:id', async (req, res) => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-        return res.send(docSnap.data());
+
+        const userInfo = docSnap.data()
+        return res.send(_.pick(userInfo , ['firstname', 'lastname', 'email']));
     } else {
         // docSnap.data() will be undefined in this case
         return res.status(404).send("Invalid ID")
@@ -46,7 +49,8 @@ router.post('/', async (req, res) => {
         const userRef = await addUser(newUser);
         const userDoc = await getDoc(userRef);
         const user = { id: userDoc.id, ...userDoc.data() };
-        res.send(user);
+
+        res.send( _.pick(user , ['firstname', 'lastname', 'email']));
     } catch (error) {
         console.error('Error adding user:', error);
         res.status(500).send('Internal server error');
@@ -74,7 +78,7 @@ router.post('/login', async (req, res) => {
         // If passwords match, user is authenticated
         if (isPasswordValid) {
             // Generate authentication token or session for the authenticated user
-            const authToken = generateAuthToken(user);
+            const authToken = generateAuthToken({id : user.id});
 
             // Return authentication token or session to the frontend
             return res.status(200).json({ authToken });
