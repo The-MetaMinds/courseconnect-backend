@@ -8,6 +8,12 @@ import 'firebase/firestore';
 import bcrypt from "bcrypt";
 import generateAuthToken from "../auth.js";
 import _ from "lodash"
+import {auth} from "../middleware/auth.js"
+
+router.post('/validate', auth, (req, res) => {
+    // If the request reaches here, it means the token is valid
+    res.status(200).send({ message: 'Token is valid' });
+  });
 
 router.post('/', async (req, res) => {
     const { email, password } = req.body;
