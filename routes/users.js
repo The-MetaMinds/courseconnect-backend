@@ -8,21 +8,51 @@ import 'firebase/firestore';
 import bcrypt from "bcrypt";
 import generateAuthToken from "../auth.js";
 import _ from "lodash"
+import {auth} from "../middleware/auth.js"
 
-router.get('/:id', async (req, res) => {
-    
-    const docRef = doc(db, "users", req.params.id);
-    const docSnap = await getDoc(docRef);
+// Endpoint handler for retrieving user profile
+router.get('/:id', auth, async (req, res) => {
+    try {
+        const requestedUserId = req.params.id;
+        const authenticatedUserId = req.user.id;
 
-    if (docSnap.exists()) {
+        // Retrieve user profile data from the database
+        const user = await getUserById(requestedUserId);
 
-        const userInfo = docSnap.data()
-        return res.send(_.pick(userInfo , ['firstname', 'lastname', 'email']));
-    } else {
-        // docSnap.data() will be undefined in this case
-        return res.status(404).send("Invalid ID")
+        // Check if the requested user profile belongs to the authenticated user
+        const isOwner = requestedUserId === authenticatedUserId;
+        
+
+        // Return different data based on the user's status
+        if (isOwner) {
+            // Return the full user profile including the password to the owner
+            return res.json(user);
+        } else {
+            // Return only the public fields of the user profile to other users
+            const publicProfile = _.pick(user, ['firstname', 'lastname', 'email']);
+            return res.json(publicProfile);
+        }
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).send('Internal server error');
     }
-})
+});
+
+async function getUserById(id) {
+    try {
+        const docRef = doc(db, "users", id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            return docSnap.data();
+        } else {
+            throw new Error('User not found');
+        }
+    } catch (error) {
+        console.error('Error fetching user by ID:', error);
+        throw error; // Optionally re-throw the error to be handled elsewhere
+    }
+}
 
 
 
@@ -57,6 +87,7 @@ router.post('/', async (req, res) => {
     }
 })
 
+/*
 // API endpoint to authenticate user credentials during login
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
@@ -91,7 +122,7 @@ router.post('/login', async (req, res) => {
         res.status(500).send('Internal server error');
     }
 });
-
+*/
 
 //deleting a user
 router.delete('/:id', async (req, res) => {
@@ -163,3 +194,5 @@ async function getUserByEmail(email) {
 
 
 export {router}
+
+

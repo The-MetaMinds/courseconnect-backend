@@ -9,7 +9,7 @@ function auth(req, res, next) {
 
     try{
         const decoded = jwt.verify(token, secretKey) //get the json decoded payload
-        req.user = decoded;
+        req.user = decoded.userId;
         next()
     }
     catch(ex){
