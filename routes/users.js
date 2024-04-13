@@ -29,7 +29,7 @@ router.get('/:id', auth, async (req, res) => {
             return res.json(user);
         } else {
             // Return only the public fields of the user profile to other users
-            const publicProfile = _.pick(user, ['firstname', 'lastname', 'email']);
+            const publicProfile = _.pick(user, ['firstname', 'lastname', 'email', 'major', 'contactNumber', 'openToTutoring', 'coursesCompleted']);
             return res.json(publicProfile);
         }
     } catch (error) {
@@ -59,9 +59,9 @@ async function getUserById(id) {
 //this is the api to create users.
 router.post('/', async (req, res) => {
 
-    const { firstname, lastname, email, password } = req.body;
+    const { firstname, lastname, email, password, major, contactNumber, openToTutoring, coursesCompleted } = req.body;
 
-    const {error} = validateUser({ firstname, lastname, email, password })
+    const {error} = validateUser({ firstname, lastname, email, password, major, contactNumber, openToTutoring, coursesCompleted })
     if(error) return res.status(400).send(error.details[0].message);
     try {
 
@@ -74,13 +74,13 @@ router.post('/', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = { firstname, lastname, email, password : hashedPassword }
+        const newUser = { firstname, lastname, email, password : hashedPassword, major, contactNumber, openToTutoring, coursesCompleted}
 
         const userRef = await addUser(newUser);
         const userDoc = await getDoc(userRef);
         const user = { id: userDoc.id, ...userDoc.data() };
 
-        res.send( _.pick(user , ['firstname', 'lastname', 'email']));
+        res.send( _.pick(user , ['firstname', 'lastname', 'email', 'major', 'contactNumber', 'openToTutoring', 'coursesCompleted']));
     } catch (error) {
         console.error('Error adding user:', error);
         res.status(500).send('Internal server error');
@@ -141,17 +141,24 @@ router.delete('/:id', async (req, res) => {
 
 })
 
-function validateUser(user){
-    const schema = Joi.object({
-        firstname : Joi.string().required(),
-        lastname: Joi.string().required(),
-        email: Joi.string()
-        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'edu'] } }).required(),
-        password : Joi.string().required()
-    })
 
+function validateUser(user) {
+    const schema = Joi.object({
+      firstname: Joi.string().required(),
+      lastname: Joi.string().required(),
+      email: Joi.string()
+        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'edu'] } })
+        .required(),
+      password: Joi.string().required(),
+      major: Joi.string(),
+      contactNumber: Joi.string(),
+      openToTutoring: Joi.boolean(),
+      image: Joi.any(),
+      coursesCompleted: Joi.array().items(Joi.string().required()),
+    });
+  
     return schema.validate(user);
-}
+  }
 
 async function addUser(newUser) {
     //const newUserAdded = await db.collection("users").add(newUser);
@@ -163,7 +170,6 @@ async function addUser(newUser) {
 async function checkEmailExists(email) {
     const q = query(collection(db, "users"), where("email", "==", email));
     const querySnapshot = await getDocs(q)
-    console.log(querySnapshot)
     return !querySnapshot.empty;
 }
 
