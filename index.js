@@ -12,7 +12,7 @@ import {router as replies} from './routes/replies.js'
 
 app.use(cors())
 app.use(express.json()); //middleware
-app.use("/api/courses/", learning)
+app.use("/api/courses", courses)
 app.use("/api/users", users)
 app.use("/api/departments", departments)
 app.use("/api/posts", posts)
