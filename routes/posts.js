@@ -5,21 +5,9 @@ import { db } from "../firebase.js"; // Assuming your Firebase module file is na
 import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDocs, limit } from "firebase/firestore"
 import 'firebase/firestore';
 import {auth} from '../middleware/auth.js'
-/*
-router.get('/:id', async (req, res) => {
+import { getUserById } from "./users.js";
 
-    const courseId = req.params.id 
 
-    const q = query(collection(db, "Posts"), where("courseId", "==", courseId));
-    const querySnapshot = await getDocs(q)
-    if (!querySnapshot .empty) {
-        return res.send(querySnapshot.docs);
-    } else {
-        // querySnapshot .data() will be undefined in this case
-        return res.status(404).send("No Posts yet")
-    }
-})
-*/
 
 router.get('/:id', auth, async (req, res) => {
     try {
@@ -30,10 +18,31 @@ router.get('/:id', auth, async (req, res) => {
 
         if (!querySnapshot.empty) {
             // Extract data from each document and form an array of post objects
-            const posts = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            const postsPromises = querySnapshot.docs.map(async doc => {
+                let userData = null;
+
+                try {
+                    userData = await getUserById(doc.data().userId);
+                    console.log(userData)
+                } catch (error) {
+                    if (error.message === "User not found") {
+                        userData = null;
+                    } else {
+                        throw error; // Re-throw other errors
+                    }
+                }
+
+                // Check if user data exists
+                const userName = userData ? `${userData.firstname} ${userData.lastname}` : 'Unknown User'; 
+
+                return {
+                    id: doc.id,
+                    ...doc.data(),
+                    username: userName // Add the user name to the post object
+                };
+            });
+
+            const posts = await Promise.all(postsPromises);
 
             return res.json(posts);
         } else {
@@ -44,6 +53,7 @@ router.get('/:id', auth, async (req, res) => {
         return res.status(500).json({ error: "Failed to fetch posts" });
     }
 });
+
 
 
 

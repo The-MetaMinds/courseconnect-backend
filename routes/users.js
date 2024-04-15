@@ -199,6 +199,6 @@ async function getUserByEmail(email) {
 }
 
 
-export {router}
+export {router, getUserById}
 
 
