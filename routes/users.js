@@ -1,3 +1,5 @@
+//next:step: make the name of profile picture of users unique
+
 import express from "express";
 const router = express.Router();
 
@@ -9,6 +11,9 @@ import bcrypt from "bcrypt";
 import generateAuthToken from "../auth.js";
 import _ from "lodash"
 import {auth} from "../middleware/auth.js"
+import multer from 'multer';
+import { storage } from "../firebase.js";
+import { getDownloadURL, ref, uploadBytes }  from "firebase/storage"
 
 // Endpoint handler for retrieving user profile
 router.get('/:id', auth, async (req, res) => {
@@ -54,12 +59,34 @@ async function getUserById(id) {
     }
 }
 
-
+const multerStorage = multer.memoryStorage();
+const upload = multer({ storage: multerStorage });
 
 //this is the api to create users.
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
 
-    const { firstname, lastname, email, password, major, contactNumber, openToTutoring, coursesCompleted } = req.body;
+    console.log(req.body)
+    console.log(req.file)
+
+    let imageDownloadURL = '';
+
+    if (req.file){
+        const imageRef = ref(storage, "profilePicture/firstimage");
+        const metadata = {
+            contentType: req.file.mimetype
+        }
+        const snapshot = await uploadBytes(imageRef, req.file.buffer, metadata)
+        imageDownloadURL = await getDownloadURL(snapshot.ref)
+        console.log(imageDownloadURL);
+    }
+
+    
+
+
+    const { firstname, lastname, email, password, major, contactNumber, openToTutoring} = req.body;
+
+    const coursesCompleted = JSON.parse(req.body.coursesCompleted);
+    console.log(coursesCompleted);
 
     const {error} = validateUser({ firstname, lastname, email, password, major, contactNumber, openToTutoring, coursesCompleted })
     if(error) return res.status(400).send(error.details[0].message);
@@ -74,7 +101,7 @@ router.post('/', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = { firstname, lastname, email, password : hashedPassword, major, contactNumber, openToTutoring, coursesCompleted}
+        const newUser = { firstname, lastname, email, password : hashedPassword, major, contactNumber, openToTutoring, coursesCompleted, image: imageDownloadURL}
 
         const userRef = await addUser(newUser);
         const userDoc = await getDoc(userRef);
