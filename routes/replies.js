@@ -5,6 +5,7 @@ import { db } from "../firebase.js"; // Assuming your Firebase module file is na
 import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDocs, limit } from "firebase/firestore"
 import 'firebase/firestore';
 import {auth} from '../middleware/auth.js'
+import { getUserById } from "./users.js";
 /*
 router.get('/:id', async (req, res) => {
 
@@ -55,11 +56,38 @@ router.get('/:id', auth, async (req, res) => {
         const querySnapshot = await getDocs(q);
 
         // Extract data from each document and form an array of post objects
+        /*
         const replies = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+        */
 
+        const repliesPromises = querySnapshot.docs.map(async doc => {
+            let userData = null;
+
+            try {
+                userData = await getUserById(doc.data().userId);
+                console.log(userData)
+            } catch (error) {
+                if (error.message === "User not found") {
+                    userData = null;
+                } else {
+                    throw error; // Re-throw other errors
+                }
+            }
+
+            // Check if user data exists
+            const userName = userData ? `${userData.firstname} ${userData.lastname}` : 'Unknown User'; 
+
+            return {
+                id: doc.id,
+                ...doc.data(),
+                username: userName // Add the user name to the post object
+            };
+        });
+
+        const replies = await Promise.all(repliesPromises);
         return res.json(replies);
     } catch (error) {
         console.error("Error fetching replies:", error);
