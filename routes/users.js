@@ -65,7 +65,6 @@ const upload = multer({ storage: multerStorage });
 //this is the api to create users.
 router.post('/', upload.single('image'), async (req, res) => {
 
-    /*
     console.log(req.body)
     console.log(req.file)
 
@@ -81,7 +80,6 @@ router.post('/', upload.single('image'), async (req, res) => {
         console.log(imageDownloadURL);
     }
 
-    */
 
 
     const { firstname, lastname, email, password, major, contactNumber, openToTutoring} = req.body;
@@ -102,7 +100,7 @@ router.post('/', upload.single('image'), async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = { firstname, lastname, email, password : hashedPassword, major, contactNumber, openToTutoring, coursesCompleted}
+        const newUser = { firstname, lastname, email, password : hashedPassword, major, contactNumber, openToTutoring, coursesCompleted, image :imageDownloadURL }
 
         const userRef = await addUser(newUser);
         const userDoc = await getDoc(userRef);
