@@ -71,7 +71,8 @@ router.post('/', upload.single('image'), async (req, res) => {
     let imageDownloadURL = '';
 
     if (req.file){
-        const imageRef = ref(storage, "profilePicture/firstimage");
+        const dateTime = Date.now();
+        const imageRef = ref(storage, `profilePicture/${dateTime}`);
         const metadata = {
             contentType: req.file.mimetype
         }
