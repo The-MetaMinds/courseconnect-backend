@@ -6,6 +6,7 @@ import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDo
 import 'firebase/firestore';
 import {auth} from '../middleware/auth.js'
 import { getUserById } from "./users.js";
+import _ from "lodash";
 
 
 
@@ -32,13 +33,20 @@ router.get('/:id', auth, async (req, res) => {
                     }
                 }
 
+                const user = userData ? {
+                    userId: doc.data().userId, // Assuming user data contains an id
+                    ..._.pick(userData, ['firstname', 'lastname', 'email', 'major', 'contactNumber', 'openToTutoring', 'coursesCompleted', 'image'])
+                } : null;
+
+                //const user = userData ? _.pick(userData, ['firstname', 'lastname', 'email', 'major', 'contactNumber', 'openToTutoring', 'coursesCompleted']) : null ;
                 // Check if user data exists
-                const userName = userData ? `${userData.firstname} ${userData.lastname}` : 'Unknown User'; 
+                //const userName = userData ? `${userData.firstname} ${userData.lastname}` : 'Unknown User'; 
+                //const userName = user ? user.firstname : 'Unknown User'
 
                 return {
                     id: doc.id,
                     ...doc.data(),
-                    username: userName // Add the user name to the post object
+                    user: user// Add the user to the post object
                 };
             });
 

@@ -34,7 +34,7 @@ router.get('/:id', auth, async (req, res) => {
             return res.json(user);
         } else {
             // Return only the public fields of the user profile to other users
-            const publicProfile = _.pick(user, ['firstname', 'lastname', 'email', 'major', 'contactNumber', 'openToTutoring', 'coursesCompleted']);
+            const publicProfile = _.pick(user, ['firstname', 'lastname', 'email', 'major', 'contactNumber', 'openToTutoring', 'coursesCompleted', 'image']);
             return res.json(publicProfile);
         }
     } catch (error) {
