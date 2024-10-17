@@ -1,7 +1,6 @@
 import express from "express";
 const router = express.Router();
 
-import Joi from 'joi';
 import { db } from "../firebase.js"; // Assuming your Firebase module file is named firebase.mjs
 import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDocs, limit } from "firebase/firestore"
 import 'firebase/firestore';
@@ -26,8 +25,6 @@ router.post('/', async (req, res) => {
         if (!user) {
             return res.status(404).send('User not found');//change it to 400 later
         }
-
-        
 
         // Compare the provided password with the hashed password stored in the database
         const isPasswordValid = await bcrypt.compare(password, user.password);

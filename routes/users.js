@@ -5,7 +5,7 @@ const router = express.Router();
 
 import Joi from 'joi';
 import { db } from "../firebase.js"; // Assuming your Firebase module file is named firebase.mjs
-import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDocs, limit } from "firebase/firestore"
+import {collection , addDoc, getDoc, deleteDoc, query, where, setDoc, doc, getDocs, limit, or } from "firebase/firestore"
 import 'firebase/firestore';
 import bcrypt from "bcrypt";
 import generateAuthToken from "../auth.js";
@@ -49,7 +49,7 @@ async function getUserById(id) {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-            return docSnap.data();
+            return {id, ...docSnap.data()};
         } else {
             throw new Error('User not found');
         }
@@ -150,6 +150,41 @@ router.post('/login', async (req, res) => {
     }
 });
 */
+
+
+//for searching for users ** will be used for the chat **still needs working on cos firebase doen't have 
+//searching queries ability as strong as mongodb
+router.get('/',auth , async (req, res) => {
+    try {
+        let usersRef = collection(db, "users");
+
+        // Extract the search keyword from the query parameters
+        const keyword = req.query.search || '';
+
+        // If a search keyword is provided, add filters to the query
+        const q = query(usersRef, or(where("firstname", "==", keyword), where("lastname", "==", keyword) ,where("email", "==", keyword)));
+
+        const querySnapshot = await getDocs(q);
+        const matchingDocuments = [];
+
+        if (querySnapshot.empty) {
+            console.log("No matching documents.");
+        } else {
+            querySnapshot.forEach((doc) => {
+                // doc.data() is never undefined for query doc snapshots
+                matchingDocuments.push({ id: doc.id, data: doc.data() });
+            });
+        }
+        
+        // Send the matching documents as the response
+        res.status(200).json(matchingDocuments);
+        
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 
 //deleting a user
 router.delete('/:id', async (req, res) => {
